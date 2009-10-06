@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 DOCUMENTATION = """
 This service offers to get Mediawiki watchlists as ATOM feeds
 
@@ -8,6 +9,7 @@ No personal information is logged nor persisted.
 
 (c) PediaPress, 2009
 
+Last-modified: 2009-10-06 23:22:32 by ralf
 """
 
 import sys
@@ -238,15 +240,15 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 return self.send_500(error,domain)
         return self.send_401(error, domain)
 
-    def source(s):
-        s.send_response(200)
-        s.send_header("Content-type", "text/plain")
-        s.end_headers()
-        s.wfile.write(open(sys.argv[0]).read())
+    def source(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/plain")
+        self.end_headers()
+        self.wfile.write(open(sys.argv[0]).read())
 
 
-    def documentation(s):
-        s.do_HEAD()
+    def documentation(self):
+        self.do_HEAD()
         out = '''
         <html><body>
 <h1>MediaWiki Watchlists as Atom-Feed</h1>
@@ -258,13 +260,13 @@ Wiki domain (w/o http):
 You can download the <a href='/source'>source code</a> of this software and run it on your own machine.
 
 </body></html>''' % DOCUMENTATION
-        s.wfile.write(out)
+        self.wfile.write(out)
 
 
-    def do_HEAD(s):
-        s.send_response(200)
-        s.send_header("Content-type", "text/html")
-        s.end_headers()
+    def do_HEAD(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
 
     def do_GET(self):
         """Respond to a GET request."""
