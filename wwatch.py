@@ -21,6 +21,7 @@ except:
 import datetime
 import time
 import BaseHTTPServer
+from SocketServer import ForkingMixIn
 import re
 import base64
 user_agent="wwatch.py v0.1"
@@ -280,7 +281,10 @@ def start_server():
     sav = sys.argv
     HOST_NAME = len(sav) >= 2 and sav[1] or ''
     PORT_NUMBER = len(sav) == 3 and int(sav[2]) or 9000
-    server_class = BaseHTTPServer.HTTPServer
+    class forking_server(ForkingMixIn,  BaseHTTPServer.HTTPServer):
+        pass
+    
+    server_class = forking_server
     httpd = server_class((HOST_NAME, PORT_NUMBER), MyHandler)
     print time.asctime(), "Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER)
     try:
@@ -298,7 +302,3 @@ if __name__ == '__main__':
             start_server()
         except KeyboardInterrupt:
             break
-
-
-
-
