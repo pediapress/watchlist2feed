@@ -11,7 +11,9 @@ No personal information is logged nor persisted.
 """
 
 import sys
+import os
 import cgi
+import signal
 import urllib,urllib2,cookielib,httplib
 try:
     import json
@@ -186,9 +188,21 @@ def gen_output(feed, cookie):
 
 
 
-
+    
 class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+    def __init__(self, request, client_address, server):
+        stime = time.time()
+        
+        def handle_sigalarm(*args):
+            raise RuntimeError("ERROR; timeout handling %s after %s seconds. closing connection." % (client_address, time.time()-stime))
 
+        signal.signal(signal.SIGALRM, handle_sigalarm)
+        self.alarm(5)
+        BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, request, client_address, server)
+
+    def alarm(self, secs):
+        signal.alarm(secs)
+        
     def send_401(self, error, domain):
         self.send_response(401, 'UNAUTHORIZED')
         self.send_header('WWW-Authenticate', 'Basic realm="Please provide your credentials for %s"' % domain)
@@ -216,11 +230,11 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             try:
                 return wikiauth(user, pwd, domain)
             except LoginFailedException,inst:
-                sys.stderr.write("Login failed: %s\n"%inst.message)
-                error = inst.message
+                sys.stderr.write("Login failed: %s\n"%inst)
+                error = inst
             except Exception, inst:
-                sys.stderr.write("Login failed: %s\n"%inst.message)
-                error = inst.message
+                sys.stderr.write("Login failed: %s\n"%inst)
+                error = inst
                 return self.send_500(error,domain)
         return self.send_401(error, domain)
 
@@ -252,24 +266,32 @@ You can download the <a href='/source'>source code</a> of this software and run 
         s.send_header("Content-type", "text/html")
         s.end_headers()
 
-    def do_GET(s):
+    def do_GET(self):
         """Respond to a GET request."""
-        #print str(s.headers)
-        #print s.path
-        domain = s.path.replace('/','').replace('index.xml','')
-        if not domain:
-            return s.documentation()
-        if domain == 'source':
-            return s.source()
-        cookie = s._authenticate(domain)
-        if not cookie:
-            return
+        try:
+            self.alarm(30)
+            #print str(self.headers)
+            #print self.path
+            domain = self.path.replace('/','').replace('index.xml','')
+            if not domain:
+                return self.documentation()
+            if domain == 'source':
+                return self.source()
+            cookie = self._authenticate(domain)
+            if not cookie:
+                return
 
-        data = get_feed(cookie, limit=500)
-        s.send_response(200)
-        s.send_header("Content-type", "application/atom+xml")
-        s.end_headers()
-        s.wfile.write(data.encode('utf8'))
+            data = get_feed(cookie, limit=500)
+        except:
+            self.send_response(500, 'Server Error')
+            self.send_header('Content-type','text/html')
+            self.end_headers()
+            self.wfile.write('<html><body><h1>Error</h1>%s</body></html>'%(sys.exc_info()[1]))
+        else:
+            self.send_response(200)
+            self.send_header("Content-type", "application/atom+xml")
+            self.end_headers()
+            self.wfile.write(data.encode('utf8'))
 
 
 def test():
@@ -286,6 +308,7 @@ def start_server():
     
     server_class = forking_server
     httpd = server_class((HOST_NAME, PORT_NUMBER), MyHandler)
+    
     print time.asctime(), "Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER)
     try:
         httpd.serve_forever()
