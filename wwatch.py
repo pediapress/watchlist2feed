@@ -2,9 +2,9 @@
 DOCUMENTATION = """
 This service offers to get Mediawiki watchlists as ATOM feeds
 
-HTTP Authentication is used to query for your user:pwd of your wiki account, 
-which is then used to access the MediaWiki API. 
-No personal information is logged nor persisted. 
+HTTP Authentication is used to query for your user:pwd of your wiki account,
+which is then used to access the MediaWiki API.
+No personal information is logged nor persisted.
 
 (c) PediaPress, 2009
 
@@ -27,7 +27,7 @@ user_agent="wwatch.py v0.1"
 
 
 class LoginFailedException(Exception):
-	pass
+        pass
 
 
 def callapi(cookie, **data):
@@ -38,7 +38,7 @@ def callapi(cookie, **data):
     #print req.get_method()
     req.add_header("User-Agent",user_agent)
     return json.load(opener.open(req))
-        
+
 
 
 def wikiauth(uname,passwd,domain):
@@ -46,16 +46,16 @@ def wikiauth(uname,passwd,domain):
     cookie=cookielib.CookieJar()
     cookie.wdomain = domain
     cookie.wuser = uname
-    cookie.apiURL = 'http://%s/w/api.php' % domain   
-    cookie.indexURL = 'http://%s/w/index.php' % domain 
-    
+    cookie.apiURL = 'http://%s/w/api.php' % domain
+    cookie.indexURL = 'http://%s/w/index.php' % domain
+
     d=callapi(cookie, action="login",
               lgname=uname,
               lgpassword = passwd)
     r = d['login']['result']
     if not 'Success' == r:
-        raise LoginFailedException("Authentication denied: " + r) 
-    return cookie	
+        raise LoginFailedException("Authentication denied: " + r)
+    return cookie
 
 def get_feed(cookie, limit=5):
 
@@ -67,7 +67,7 @@ def get_feed(cookie, limit=5):
     feed =  d['query']['watchlist']
     #for x in feed: print x +"\n"
     return gen_output(feed, cookie)
-   
+
 
 
 def gen_output(feed, cookie):
@@ -78,14 +78,14 @@ def gen_output(feed, cookie):
     <link href="%(href_page)s"/>
     <id>%(uuid)s</id>
     <updated>%(updated)s</updated>
-	<content type="xhtml">
-	  <div xmlns="http://www.w3.org/1999/xhtml">
- 		%(summary)s
-	   </div>
+        <content type="xhtml">
+          <div xmlns="http://www.w3.org/1999/xhtml">
+                %(summary)s
+           </div>
         </content>
     </entry>
-""" 
-        
+"""
+
     change_template = \
 """
    <li>
@@ -96,25 +96,25 @@ def gen_output(feed, cookie):
    <a href="%(href_user)s">%(user)s</a>
    (<a href="%(href_user_talk)s">talk</a>)
    (<a href="%(href_user_contribs)s">contribs</a>)
-    (<i>%(comment)s</i>)  
-   </li>""" 
+    (<i>%(comment)s</i>)
+   </li>"""
 
     def iurl(**kargs):
         for k,v in kargs.items():
-            try: 
+            try:
                 kargs[k] = v.encode('utf8')
             except AttributeError:
                 pass
         return cookie.indexURL + "?" + urllib.urlencode(kargs)
-    
+
     def get_date(ts):
         # 2009-09-18T22:04:52Z, python datetime documentation sucked, for me
-    	return ts[:10], ts[11:16]
+        return ts[:10], ts[11:16]
 
     # prepare sorted list of all changed pages
-    titles = [] 
+    titles = []
     for x in feed:
-	if x['title'] not in titles:
+        if x['title'] not in titles:
             titles.append(x['title'])
 
     entries = []
@@ -125,7 +125,7 @@ def gen_output(feed, cookie):
                  summary = u"",
                  updated = None,
                  uuid = None,
-                 href_page = None) 
+                 href_page = None)
         for x in feed: # with all changes ...
             if title != x['title']: # ... of this page
                 continue
@@ -147,14 +147,14 @@ def gen_output(feed, cookie):
             for f in ('minor','bot','new'):
                 if f in x:
                     x['flag'] = f
-            day, x['time'] = get_date(x['timestamp']) 	   
+            day, x['time'] = get_date(x['timestamp'])
             if day != last_day:
                 if last_day is not None:
-                    e['summary'] += "</ul>" 	
+                    e['summary'] += "</ul>"
                 e['summary'] += "<h2>%s</h2><ul>" % day
                 last_day = day
             e['summary'] += change_template % x
-        e['summary'] += "</ul>" 	
+        e['summary'] += "</ul>"
         entries.append( entry_template % e)
 
     href_css = "http://en.wikipedia.org/skins-1.5/common/common.css"
@@ -163,24 +163,24 @@ def gen_output(feed, cookie):
 
     updated = datetime.datetime.isoformat(datetime.datetime.utcnow().replace(microsecond=0)) + ""
 
-    
+
     answer = \
 '''<?xml version="1.0"?>
 <?xml-stylesheet type="text/css" href="%(href_css)s"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
-		<id>urn:%(href_self)s</id>
-		<title>%(title)s</title>
-		<updated>%(updated)s</updated>
+                <id>urn:%(href_self)s</id>
+                <title>%(title)s</title>
+                <updated>%(updated)s</updated>
            <link href="%(href_self)s" />
- 
+
 <author><name>your watchlist</name></author>
  %(entries)s
-	</feed>
+        </feed>
 ''' % dict( href_css = href_css,
-	    href_self= href_self,
-	    title=title, 	
-	    updated = updated,
-	    entries = "\n".join(entries) ) 
+            href_self= href_self,
+            title=title,
+            updated = updated,
+            entries = "\n".join(entries) )
     return answer
 
 
@@ -189,10 +189,10 @@ def gen_output(feed, cookie):
 class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def send_401(self, error, domain):
-    	self.send_response(401, 'UNAUTHORIZED')
+        self.send_response(401, 'UNAUTHORIZED')
         self.send_header('WWW-Authenticate', 'Basic realm="Please provide your credentials for %s"' % domain)
         self.send_header('Content-type','text/html')
-    	self.end_headers()
+        self.end_headers()
         self.wfile.write('<html><body><h1>Error: Authentication needed</h1>%s</body></html>'%error)
 
 
@@ -205,10 +205,10 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 
 
-    def _authenticate(self, domain):  
+    def _authenticate(self, domain):
         error = ""
         m = 'Authorization: Basic '
-        a = [x[len(m):].strip() for x in str(self.headers).split("\n") 
+        a = [x[len(m):].strip() for x in str(self.headers).split("\n")
              if x.startswith(m)]
         if domain and a:
             user, pwd = base64.b64decode(a[0]).split(':')
@@ -216,24 +216,24 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 return wikiauth(user, pwd, domain)
             except LoginFailedException,inst:
                 sys.stderr.write("Login failed: %s\n"%inst.message)
-                error = inst.message	
-	    except Exception, inst:
+                error = inst.message
+            except Exception, inst:
                 sys.stderr.write("Login failed: %s\n"%inst.message)
                 error = inst.message
                 return self.send_500(error,domain)
         return self.send_401(error, domain)
 
     def source(s):
-    	s.send_response(200)
+        s.send_response(200)
         s.send_header("Content-type", "text/plain")
         s.end_headers()
-        s.wfile.write(open(sys.argv[0]).read()) 
+        s.wfile.write(open(sys.argv[0]).read())
 
 
     def documentation(s):
         s.do_HEAD()
-        out = '''	
-	<html><body>
+        out = '''
+        <html><body>
 <h1>MediaWiki Watchlists as Atom-Feed</h1>
 Wiki domain (w/o http):
 <input type="text" id="domain" value='en.wikipedia.org'/>
@@ -244,27 +244,27 @@ You can download the <a href='/source'>source code</a> of this software and run 
 
 </body></html>''' % DOCUMENTATION
         s.wfile.write(out)
-	
+
 
     def do_HEAD(s):
         s.send_response(200)
         s.send_header("Content-type", "text/html")
         s.end_headers()
-    
+
     def do_GET(s):
         """Respond to a GET request."""
         #print str(s.headers)
-    	#print s.path
-    	domain = s.path.replace('/','').replace('index.xml','')
-    	if not domain:
+        #print s.path
+        domain = s.path.replace('/','').replace('index.xml','')
+        if not domain:
             return s.documentation()
         if domain == 'source':
             return s.source()
         cookie = s._authenticate(domain)
-    	if not cookie:
+        if not cookie:
             return
 
-        data = get_feed(cookie, limit=500)	
+        data = get_feed(cookie, limit=500)
         s.send_response(200)
         s.send_header("Content-type", "application/atom+xml")
         s.end_headers()
@@ -277,9 +277,9 @@ def test():
     sys.exit(0)
 
 def start_server():
-    sav = sys.argv	
+    sav = sys.argv
     HOST_NAME = len(sav) >= 2 and sav[1] or ''
-    PORT_NUMBER = len(sav) == 3 and int(sav[2]) or 9000 
+    PORT_NUMBER = len(sav) == 3 and int(sav[2]) or 9000
     server_class = BaseHTTPServer.HTTPServer
     httpd = server_class((HOST_NAME, PORT_NUMBER), MyHandler)
     print time.asctime(), "Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER)
