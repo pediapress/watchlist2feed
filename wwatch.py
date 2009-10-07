@@ -9,7 +9,7 @@ No personal information is logged nor persisted.
 
 (c) PediaPress, 2009
 
-Last-modified: 2009-10-06 23:22:32 by ralf
+Last-modified: 2009-10-07 11:36:06 by ralf
 """
 
 import sys
@@ -314,16 +314,10 @@ def start_server():
     print time.asctime(), "Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER)
     try:
         httpd.serve_forever()
-    except Exception:
-        pass
+    except KeyboardInterrupt:
+        print "interrupted. bye."
     httpd.server_close()
-    raise Exception
 
 
 if __name__ == '__main__':
-    #test() # use for cmd line testing
-    while True:
-        try:
-            start_server()
-        except KeyboardInterrupt:
-            break
+    start_server()
