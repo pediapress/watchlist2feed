@@ -9,8 +9,15 @@ No personal information is logged nor persisted.
 
 (c) PediaPress, 2009
 
-Last-modified: 2009-10-07 11:36:06 by ralf
+Last modified: 2009-10-07 11:49:52 by ralf
 """
+
+# -- options
+user_agent="wwatch.py v0.1"
+http_timeout_1 = 5  
+http_timeout_2 = 30
+
+
 
 import sys
 import os
@@ -28,7 +35,7 @@ import BaseHTTPServer
 from SocketServer import ForkingMixIn
 import re
 import base64
-user_agent="wwatch.py v0.1"
+
 
 
 class LoginFailedException(Exception):
@@ -199,7 +206,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             raise RuntimeError("ERROR; timeout handling %s after %s seconds. closing connection." % (client_address, time.time()-stime))
 
         signal.signal(signal.SIGALRM, handle_sigalarm)
-        self.alarm(5)
+        self.alarm(http_timeout_1)
         BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, request, client_address, server)
 
     def alarm(self, secs):
@@ -271,7 +278,7 @@ You can download the <a href='/source'>source code</a> of this software and run 
     def do_GET(self):
         """Respond to a GET request."""
         try:
-            self.alarm(30)
+            self.alarm(http_timeout_2)
             #print str(self.headers)
             #print self.path
             domain = self.path.replace('/','').replace('index.xml','')
